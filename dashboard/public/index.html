@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards Dashboard</title>
+    <script src="/assets/tailwind.js"></script>
+    <script src="/assets/chart.js"></script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(30, 27, 75, 0.4) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(15, 23, 42, 0.8) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(58, 48, 120, 0.15) 0px, transparent 50%);
+            color: #f1f5f9;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Premium Glassmorphic Card */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.35);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+        }
+
+        .glass-select {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .glass-select:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .glass-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        .good {
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+        }
+
+        .warn {
+            color: #f59e0b;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+        }
+
+        .danger {
+            color: #ef4444;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Glass buttons */
+        .glass-btn {
+            background: rgba(59, 130, 246, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* ─── Streak Board ─── */
+        .streak-board {
+            margin-top: 8px;
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.45);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .streak-board-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 800;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .streak-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 5px;
+        }
+        .streak-row:last-child { margin-bottom: 0; }
+        .streak-label {
+            font-size: 9px;
+            color: #94a3b8;
+            width: 70px;
+            flex-shrink: 0;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .streak-circles {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .streak-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 900;
+            transition: all 0.25s ease;
+            cursor: default;
+            position: relative;
+        }
+        .circle-filled {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            border: 2.5px solid #93c5fd;
+            color: white;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.6), inset 0 1px 2px rgba(255,255,255,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .circle-holo {
+            background: rgba(100, 116, 139, 0.12);
+            border: 2.5px solid rgba(100, 116, 139, 0.45);
+            color: #94a3b8;
+            opacity: 0.8;
+        }
+        .circle-current {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            border: 2.5px solid #fcd34d;
+            color: #1e293b;
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.7), 0 0 6px rgba(245, 158, 11, 0.4), inset 0 1px 2px rgba(255,255,255,0.3);
+            text-shadow: 0 1px 1px rgba(255,255,255,0.2);
+        }
+        .circle-milestone {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: 2.5px solid #d8b4fe;
+            color: white;
+            box-shadow: 0 0 14px rgba(168, 85, 247, 0.6), inset 0 1px 2px rgba(255,255,255,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .circle-quest {
+            background: linear-gradient(135deg, #059669, #10b981);
+            border: 2.5px solid #6ee7b7;
+            color: white;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.6), inset 0 1px 2px rgba(255,255,255,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+        /* Add this new Red circle class */
+        .circle-danger {
+            background: linear-gradient(135deg, #991b1b, #ef4444);
+            border: 2.5px solid #fca5a5;
+            color: white;
+            box-shadow: 0 0 14px rgba(239, 68, 68, 0.6), inset 0 1px 2px rgba(255,255,255,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+
+<body class="p-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-white flex items-center gap-4">
+                Microsoft Rewards
+                <span id="totalAccountsBadge"
+                    class="hidden bg-blue-900/50 text-blue-300 text-sm py-1 px-3 rounded-full border border-blue-700/50 shadow-inner tracking-wide">
+                    0 Accounts
+                </span>
+            </h1>
+            <div class="flex gap-3">
+                <select id="flagFilter" onchange="renderCards()"
+                    class="glass-select px-3 py-2 outline-none cursor-pointer">
+                    <option value="all">Filter: All Accounts</option>
+                    <option value="banned">🚫 Banned Accounts Only</option>
+                    <option value="ranToday">🟢 Ran Today</option>
+                    <option value="didNotRunToday">🔴 Did Not Run Today</option>
+                    <option value="botWarning">⚠️ Bot Warning</option>
+                    <option value="redeemBlocked">🚫 Redeem Blocked</option>
+                    <option value="flagged">⚠️ Account Flagged</option>
+                    <option value="riskReview">⏳ Risk Review</option>
+                    <option value="anyIssue">Show All with Issues</option>
+                    <option value="clean">✅ Clean Accounts Only</option>
+                </select>
+                <select id="sortFilter" onchange="renderCards()"
+                    class="glass-select px-3 py-2 outline-none cursor-pointer">
+                    <option value="config">Sort: Config Order</option>
+                    <option value="balanceDesc">Sort: Highest Balance</option>
+                    <option value="balanceAsc">Sort: Lowest Balance</option>
+                    <option value="todayDesc">Sort: Most Points Today</option>
+                    <option value="todayAsc">Sort: Lowest Points Today</option>
+                    <option value="botScoreDesc">Sort: Highest Bot Score</option>
+                    <option value="botScoreAsc">Sort: Lowest Bot Score</option>
+                    <option value="botScoreDiffDesc">Sort: Highest Score Change</option>
+                    <option value="botScoreDiffAsc">Sort: Lowest Score Change</option>
+                    <option value="expDiffDesc">Sort: Highest Exp Diff</option>
+                    <option value="expDiffAsc">Sort: Lowest Exp Diff</option>
+                    <option value="lastRunDesc">Sort: Last Run Time</option>
+                </select>
+                <select id="pageSizeFilter" onchange="changePageSize()"
+                    class="glass-select px-3 py-2 outline-none cursor-pointer">
+                    <option value="6">Show 6 Accounts</option>
+                    <option value="3">Show 3 Accounts</option>
+                    <option value="9">Show 9 Accounts</option>
+                    <option value="12">Show 12 Accounts</option>
+                    <option value="24">Show 24 Accounts</option>
+                    <option value="all">Show All</option>
+                </select>
+                <select id="chartFilter" onchange="renderChart()"
+                    class="glass-select px-3 py-2 outline-none cursor-pointer">
+                    <option value="7">Graph: Last 7 Days</option>
+                    <option value="30">Graph: Last 30 Days</option>
+                    <option value="all">Graph: All Time</option>
+                </select>
+                <button onclick="fetchData()" class="glass-btn text-white px-4 py-2 rounded-lg font-bold shadow-lg">
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6 shadow-2xl mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white">Account Growth & Earnings</h2>
+                <div class="flex gap-3">
+                    <div
+                        class="text-sm text-slate-300 bg-slate-900 px-4 py-1.5 rounded-full border border-slate-700 flex items-center shadow-inner">
+                        <span class="uppercase tracking-wider text-[10px] font-bold text-slate-400 mr-2">Total
+                            Balance:</span>
+                        <span id="totalBalanceDisplay" class="text-purple-400 font-bold text-lg leading-none">0</span>
+                    </div>
+                    <div
+                        class="text-sm text-slate-300 bg-slate-900 px-4 py-1.5 rounded-full border border-slate-700 flex items-center shadow-inner">
+                        <span class="uppercase tracking-wider text-[10px] font-bold text-slate-400 mr-2">Today's
+                            Earnings:</span>
+                        <span id="todayTotalDisplay" class="text-green-400 font-bold text-lg leading-none">+0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="relative h-[250px] w-full">
+                <canvas id="pointsChart"></canvas>
+            </div>
+        </div>
+
+        <div id="goalForecastContainer" class="mb-8 overflow-hidden hidden"></div>
+
+        <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center text-slate-400">Loading accounts...</div>
+        </div>
+
+    </div>
+
+    <!-- Floating Previous Page Button -->
+    <button id="prevPageBtn" onclick="prevPage()" 
+        class="fixed left-6 top-1/2 -translate-y-1/2 z-40 bg-slate-800/90 hover:bg-slate-700/95 text-white border-2 border-slate-600/50 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group hidden"
+        title="Previous Page">
+        <span class="text-xl font-bold transition-transform group-hover:-translate-x-1">◀</span>
+    </button>
+
+    <!-- Floating Next Page Button -->
+    <button id="nextPageBtn" onclick="nextPage()" 
+        class="fixed right-6 top-1/2 -translate-y-1/2 z-40 bg-slate-800/90 hover:bg-slate-700/95 text-white border-2 border-slate-600/50 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group hidden"
+        title="Next Page">
+        <span class="text-xl font-bold transition-transform group-hover:translate-x-1">▶</span>
+    </button>
+
+    <!-- Floating Page Indicator Pill (Centered Bottom with Direct Input Jumper) -->
+    <div id="pageIndicator" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur border-2 border-slate-700/60 text-indigo-300 px-4 py-2 rounded-full font-mono text-xs font-bold shadow-2xl flex items-center gap-2 select-none hidden">
+        <span>PAGE</span>
+        <input type="number" id="pageNumberInput" min="1" class="w-12 bg-indigo-950/70 text-white font-bold text-center border border-indigo-700/40 rounded px-1.5 py-0.5 outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" onchange="jumpToPage(this.value)" onkeyup="if(event.key === 'Enter') jumpToPage(this.value)">
+        <span class="text-slate-400">OF</span>
+        <span id="totalPagesInfo" class="text-white bg-indigo-950/50 px-2.5 py-0.5 rounded-full border border-indigo-700/30">1</span>
+    </div>
+
+    <!-- Right Side Bottom Floating Action Buttons Stack -->
+    <!-- Stack 3: TOTP Generator Button -->
+    <button id="totpBtn" onclick="openTotpModal()"
+        class="fixed right-6 bg-blue-600 hover:bg-blue-500 text-white rounded-full w-14 h-14 shadow-2xl z-50 flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 border-blue-400/50 group"
+        style="bottom: 168px;"
+        title="Authenticator Generator">
+        <svg fill="none" height="24" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24">
+            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+    </button>
+
+    <!-- Stack 2: Refresh Data Button -->
+    <button id="refreshBtn" onclick="fetchData()"
+        class="fixed right-6 bg-slate-800 hover:bg-slate-700 text-white rounded-full w-14 h-14 shadow-2xl z-50 flex items-center justify-center border-2 border-slate-600/50 group transition-all duration-300 hover:scale-110"
+        style="bottom: 96px;"
+        title="Refresh Data">
+        <span class="text-2xl transition-transform group-hover:rotate-180 duration-500 block">🔄</span>
+    </button>
+
+    <!-- Stack 1: Info / Guide Button -->
+    <button id="infoPanelBtn" onclick="toggleInfoPanel()"
+        class="fixed bottom-6 right-6 bg-slate-800 hover:bg-slate-700 text-white rounded-full w-14 h-14 shadow-2xl z-50 flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 border-slate-600/50"
+        title="Reward & Streak Guide">
+        <span class="text-2xl">💡</span>
+    </button>
+
+    <div id="infoPanelContent"
+        class="fixed right-6 bg-slate-800/95 backdrop-blur border border-slate-600 rounded-xl shadow-2xl z-40 w-80 opacity-0 pointer-events-none translate-y-4"
+        style="bottom: 240px;">
+        <div class="bg-slate-900/80 rounded-t-xl p-3 border-b border-slate-700 flex justify-between items-center">
+            <h3 class="text-sm font-bold text-blue-400 flex items-center gap-2">
+                <span>💡</span> Reward & Streak Guide
+            </h3>
+            <button onclick="toggleInfoPanel()"
+                class="text-slate-400 hover:text-white transition font-bold px-2 py-0.5 rounded hover:bg-slate-700">✕</button>
+        </div>
+        <div class="p-4 space-y-4">
+            <div>
+                <h4
+                    class="font-bold text-slate-300 border-b border-slate-700 pb-1 mb-2 uppercase tracking-wide text-[10px]">
+                    B-Tech eGift Cards</h4>
+                <ul class="space-y-1.5 text-slate-400 font-mono text-xs">
+                    <li class="flex justify-between items-center"><span>E£100 Card</span> <span
+                            class="text-blue-300 font-bold">2,780 pts</span></li>
+                    <li class="flex justify-between items-center"><span>E£200 Card</span> <span
+                            class="text-blue-300 font-bold">5,560 pts</span></li>
+                    <li class="flex justify-between items-center"><span>E£250 Card</span> <span
+                            class="text-blue-300 font-bold">6,950 pts</span></li>
+                </ul>
+            </div>
+            <div>
+                <h4
+                    class="font-bold text-slate-300 border-b border-slate-700 pb-1 mb-2 uppercase tracking-wide text-[10px]">
+                    Daily Set Streak Bonuses</h4>
+                <ul class="space-y-1 text-slate-400 font-mono text-[11px]">
+                    <li class="flex justify-between items-center"><span>Day 3</span> <span
+                            class="text-green-400 font-bold">+45 pts</span></li>
+                    <li class="flex justify-between items-center"><span>Day 8 & 13</span> <span
+                            class="text-green-400 font-bold">+75 pts</span></li>
+                    <li class="flex justify-between items-center"><span>Day 10 (Sign-in Gift)</span> <span
+                            class="text-green-400 font-bold">+1180 pts</span></li>
+                    <li class="flex justify-between items-center"><span>Day 20 & 27</span> <span
+                            class="text-green-400 font-bold">+105 pts</span></li>
+                    <li class="flex justify-between items-center"><span>Day 34 (Then every 10)</span> <span
+                            class="text-green-400 font-bold">+150 pts</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="accountModal"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+        <div
+            class="bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-slate-700">
+            <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 rounded-t-xl">
+                <h2 id="modalTitle" class="text-2xl font-bold text-white tracking-wide">Account Details</h2>
+                <button onclick="closeModal()"
+                    class="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div id="modalBody" class="p-6 overflow-y-auto flex-grow space-y-6"></div>
+        </div>
+    </div>
+    <div id="totpModal" class="fixed inset-0 bg-slate-950/80 hidden justify-center items-center z-50 backdrop-blur-sm">
+        <div
+            class="bg-slate-900 border border-slate-700 w-11/12 max-w-md rounded-2xl shadow-2xl overflow-hidden relative">
+            <div class="flex justify-between items-center p-5 border-b border-slate-800 bg-slate-800/30">
+                <h2 class="text-xl font-bold text-slate-200 flex items-center gap-2">
+                    <svg fill="none" height="20" stroke="#3b82f6" stroke-width="2" viewBox="0 0 24 24" width="20">
+                        <rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    TOTP Generator
+                </h2>
+                <button onclick="closeTotpModal()" class="text-slate-400 hover:text-red-400 transition">
+                    <svg fill="none" height="24" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div class="flex bg-slate-950 rounded-lg p-1 mb-5 border border-slate-800">
+                    <button id="totpModeAuto" onclick="setTotpMode('auto')"
+                        class="flex-1 text-sm font-bold py-2 rounded-md bg-slate-800 text-blue-400 shadow">Select
+                        Account</button>
+                    <button id="totpModeManual" onclick="setTotpMode('manual')"
+                        class="flex-1 text-sm font-bold py-2 rounded-md text-slate-500 hover:text-slate-300">Manual
+                        Entry</button>
+                </div>
+
+                <div id="totpAutoSection" class="mb-5">
+                    <label class="block text-xs uppercase text-slate-500 font-bold mb-2">Account</label>
+                    <select id="totpAccountSelect"
+                        class="w-full bg-slate-950 border border-slate-700 text-slate-300 rounded-lg p-3 outline-none focus:border-blue-500 transition mb-3">
+                        <option value="">Loading accounts...</option>
+                    </select>
+
+                    <div class="flex items-center gap-3 bg-slate-950 border border-slate-700 rounded-lg p-2">
+                        <label for="totpIndexInput"
+                            class="text-xs uppercase text-slate-500 font-bold pl-2 cursor-pointer">Quick Jump #</label>
+                        <input type="number" id="totpIndexInput" placeholder="e.g. 1"
+                            class="flex-1 bg-slate-900 border border-slate-700 text-blue-400 font-bold rounded-md p-1.5 outline-none focus:border-blue-500 transition">
+                    </div>
+
+                    <div id="totpSecretDisplay" class="mt-3 text-xs text-slate-500 font-mono hidden">
+                        Secret: <span id="totpSecretValue" class="text-blue-400 select-all font-bold"></span>
+                    </div>
+                </div>
+
+                <div id="totpManualSection" class="mb-5 hidden">
+                    <label class="block text-xs uppercase text-slate-500 font-bold mb-2">Secret Key</label>
+                    <input type="text" id="totpManualInput" placeholder="e.g. bs6h x4vq f4xm maer"
+                        class="w-full bg-slate-950 border border-slate-700 text-slate-300 rounded-lg p-3 outline-none focus:border-blue-500 transition font-mono">
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 text-center relative group">
+                    <div id="totpCode"
+                        class="text-4xl font-mono tracking-[0.2em] font-bold text-white transition-all cursor-pointer hover:text-blue-400"
+                        onclick="copyTotp()" title="Click to copy">
+                        --- ---
+                    </div>
+                    <div id="totpCopyMsg"
+                        class="absolute inset-0 flex justify-center items-center bg-blue-500/90 text-white font-bold rounded-xl opacity-0 transition-opacity pointer-events-none">
+                        Copied!
+                    </div>
+                </div>
+
+                <div class="mt-5 flex items-center gap-3">
+                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="totpProgressBar" class="h-full bg-blue-500 transition-all duration-1000 ease-linear"
+                            style="width: 100%"></div>
+                    </div>
+                    <div id="totpTimerText" class="text-xs font-bold text-slate-400 w-8 text-right">30s</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button id="calcBtn" onclick="window.toggleCalcPanel()"
+        class="fixed bottom-24 left-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full w-14 h-14 shadow-2xl z-50 flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 border-indigo-400/50"
+        title="Points Calculator">
+        <span class="text-2xl">🧮</span>
+    </button>
+
+    <div id="calcPanelContent"
+        class="fixed left-6 bg-slate-800/95 backdrop-blur border border-slate-600 rounded-xl shadow-2xl z-40 w-80 opacity-0 pointer-events-none -translate-x-4 transition-all duration-300 p-5 max-h-[75vh] overflow-y-auto"
+        style="bottom: 168px;">
+        <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+            <h3 class="text-sm font-bold text-indigo-400 flex items-center gap-2"><span>🧮</span> Points Calculator</h3>
+            <button onclick="window.toggleCalcPanel()"
+                class="text-slate-400 hover:text-white font-bold bg-slate-700/50 hover:bg-slate-700 px-2 py-0.5 rounded transition">✕</button>
+        </div>
+
+        <div class="space-y-4">
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1.5">From
+                        Date:</label>
+                    <input type="date" id="calcStartDateInput"
+                        class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-mono outline-none focus:border-indigo-500 shadow-inner">
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1.5">To
+                        Day:</label>
+                    <input type="number" id="calcEndDayInput" min="1" value="1" placeholder="e.g. 14"
+                        class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-mono outline-none focus:border-indigo-500 shadow-inner">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1.5">Account
+                    Level:</label>
+                <select id="calcLevelInput"
+                    class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500 shadow-inner cursor-pointer">
+                    <option value="Gold">Gold Member (Level 2)</option>
+                    <option value="Silver">Silver Member (Level 1)</option>
+                </select>
+            </div>
+
+            <button onclick="window.runManualCalc()"
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg py-2 text-sm font-bold shadow-lg border border-indigo-500 transition-colors">
+                Calculate Expected Points
+            </button>
+
+            <div id="calcResult"
+                class="mt-4 text-sm text-slate-300 bg-slate-900/80 p-3 rounded-lg border border-slate-700 hidden shadow-inner">
+            </div>
+        </div>
+    </div>
+    <script src="/assets/otpauth.js"></script>
+    <script src="/js/totp.js"></script>
+    <script src="/js/pointsCalculator.js"></script>
+    
+    <!-- Modular Dashboard Scripts -->
+    <script src="/js/helpers.js"></script>
+    <script src="/js/chartModule.js"></script>
+    <script src="/js/goalForecast.js"></script>
+    <script src="/js/modalModule.js"></script>
+    <script src="/js/cardsModule.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+
+</html>
